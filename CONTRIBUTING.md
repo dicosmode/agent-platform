@@ -22,10 +22,11 @@ cd agent-platform
 go build ./...
 ```
 
-### 2. Run unit tests
+### 2. Run tests and lint
 
 ```bash
-go test ./scheduler/ -v
+make test   # unit + controller tests
+make lint   # golangci-lint
 ```
 
 ### 3. Create a local cluster
@@ -132,7 +133,11 @@ See the roadmap in the README. Some ideas:
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-change`
 3. Make your changes
-4. Ensure tests pass: `go test ./... && go build ./...`
+4. Ensure tests and lint pass:
+   ```bash
+   make test
+   make lint
+   ```
 5. Commit with a descriptive message
 6. Open a Pull Request
 

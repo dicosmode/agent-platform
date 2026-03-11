@@ -204,6 +204,10 @@ agent budget exceeded, falling back  {"task":"task-overflow", "from":"marketing"
 task scheduled  {"task":"task-overflow", "agent":"nlp-agent", "fallback":true}
 ```
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, conventions, and how to submit PRs.
+
 ## Unit Tests
 
 ```bash
