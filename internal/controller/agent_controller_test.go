@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	agentsv1 "github.com/ezequiel/agent-platform/api/v1"
+	"github.com/ezequiel/agent-platform/scheduler"
 )
 
 var _ = Describe("Agent Controller", func() {
@@ -51,7 +52,11 @@ var _ = Describe("Agent Controller", func() {
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: agentsv1.AgentSpec{
+						Pool:      "team",
+						Skills:    []string{"summarize"},
+						BudgetRef: "test-budget",
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
@@ -69,8 +74,9 @@ var _ = Describe("Agent Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &AgentReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+				Client:    k8sClient,
+				Scheme:    k8sClient.Scheme(),
+				Scheduler: scheduler.New(),
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{

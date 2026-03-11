@@ -113,10 +113,7 @@ func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			}
 		} else {
 			budget.Status.Used += task.Spec.Cost
-			budget.Status.Remaining = budget.Spec.Limit - budget.Status.Used
-			if budget.Status.Remaining < 0 {
-				budget.Status.Remaining = 0
-			}
+			budget.Status.Remaining = max(budget.Spec.Limit-budget.Status.Used, 0)
 			if err := r.Status().Update(ctx, &budget); err != nil {
 				return ctrl.Result{}, err
 			}

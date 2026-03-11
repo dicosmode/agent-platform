@@ -32,13 +32,13 @@ func newBudget(name string, limit, used int, pool string) agentsv1.Budget {
 	}
 }
 
-func newTask(name, skill, team string, cost int) agentsv1.Task {
+func newTask(name string) agentsv1.Task {
 	return agentsv1.Task{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: agentsv1.TaskSpec{
-			Skill: skill,
-			Cost:  cost,
-			Team:  team,
+			Skill: "summarize",
+			Cost:  10,
+			Team:  "marketing",
 		},
 	}
 }
@@ -52,7 +52,7 @@ func TestSchedule_HappyPath(t *testing.T) {
 	budget := newBudget("marketing-budget", 100, 20, "team")
 	s.SyncBudget(budget)
 
-	task := newTask("task-1", "summarize", "marketing", 10)
+	task := newTask("task-1")
 	result, err := s.Schedule(task)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -82,7 +82,7 @@ func TestSchedule_BudgetExhausted_Fallback(t *testing.T) {
 	s.SyncBudget(newBudget("marketing-budget", 100, 95, "team"))
 	s.SyncBudget(newBudget("shared-budget", 500, 50, "shared"))
 
-	task := newTask("task-1", "summarize", "marketing", 10)
+	task := newTask("task-1")
 	result, err := s.Schedule(task)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -103,7 +103,7 @@ func TestSchedule_NoBudgetAvailable(t *testing.T) {
 
 	s.SyncBudget(newBudget("marketing-budget", 100, 100, "team"))
 
-	task := newTask("task-1", "summarize", "marketing", 10)
+	task := newTask("task-1")
 	_, err := s.Schedule(task)
 	if err == nil {
 		t.Fatal("expected error for exhausted budget, got nil")
@@ -118,7 +118,7 @@ func TestSchedule_NoAgentsWithSkill(t *testing.T) {
 
 	s.SyncBudget(newBudget("marketing-budget", 100, 0, "team"))
 
-	task := newTask("task-1", "summarize", "marketing", 10)
+	task := newTask("task-1")
 	_, err := s.Schedule(task)
 	if err == nil {
 		t.Fatal("expected error for no matching skill, got nil")
@@ -140,7 +140,7 @@ func TestSchedule_PoolOrder_TeamSharedGlobal(t *testing.T) {
 	s.SyncBudget(newBudget("shared-budget", 100, 0, "shared"))
 	s.SyncBudget(newBudget("global-budget", 100, 0, "global"))
 
-	task := newTask("task-1", "summarize", "marketing", 10)
+	task := newTask("task-1")
 	result, err := s.Schedule(task)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -165,7 +165,7 @@ func TestSchedule_PoolFallbackChain(t *testing.T) {
 	s.SyncBudget(newBudget("shared-budget", 10, 10, "shared"))
 	s.SyncBudget(newBudget("global-budget", 100, 0, "global"))
 
-	task := newTask("task-1", "summarize", "marketing", 10)
+	task := newTask("task-1")
 	result, err := s.Schedule(task)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -185,8 +185,8 @@ func TestSchedule_BudgetDeduction(t *testing.T) {
 	s.RegisterAgent(agent)
 	s.SyncBudget(newBudget("budget-1", 100, 0, "team"))
 
-	for i := 0; i < 10; i++ {
-		task := newTask("task", "summarize", "marketing", 10)
+	for i := range 10 {
+		task := newTask("task")
 		_, err := s.Schedule(task)
 		if err != nil {
 			t.Fatalf("iteration %d: expected no error, got: %v", i, err)
@@ -198,7 +198,7 @@ func TestSchedule_BudgetDeduction(t *testing.T) {
 		t.Errorf("expected 0 remaining after 10 tasks, got %d", remaining)
 	}
 
-	task := newTask("task-overflow", "summarize", "marketing", 10)
+	task := newTask("task-overflow")
 	_, err := s.Schedule(task)
 	if err == nil {
 		t.Fatal("expected error after budget exhausted, got nil")

@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"sync"
 
 	agentsv1 "github.com/ezequiel/agent-platform/api/v1"
@@ -57,10 +57,7 @@ func (s *Scheduler) UnregisterAgent(name string) {
 func (s *Scheduler) SyncBudget(budget agentsv1.Budget) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	remaining := budget.Spec.Limit - budget.Status.Used
-	if remaining < 0 {
-		remaining = 0
-	}
+	remaining := max(budget.Spec.Limit-budget.Status.Used, 0)
 	s.budgets[budget.Name] = remaining
 	s.budgetLimits[budget.Name] = budget.Spec.Limit
 }
@@ -99,10 +96,8 @@ func (s *Scheduler) Schedule(task agentsv1.Task) (*ScheduleResult, error) {
 		return nil, fmt.Errorf("no agents found with skill %q", task.Spec.Skill)
 	}
 
-	sort.Slice(candidates, func(i, j int) bool {
-		pi := poolScore(candidates[i])
-		pj := poolScore(candidates[j])
-		return pi < pj
+	slices.SortFunc(candidates, func(a, b agentsv1.Agent) int {
+		return poolScore(a) - poolScore(b)
 	})
 
 	var exhaustedAgents []string
@@ -133,11 +128,8 @@ func (s *Scheduler) Schedule(task agentsv1.Task) (*ScheduleResult, error) {
 func (s *Scheduler) findAgentsBySkill(skill string) []agentsv1.Agent {
 	var result []agentsv1.Agent
 	for _, agent := range s.agents {
-		for _, agentSkill := range agent.Spec.Skills {
-			if agentSkill == skill {
-				result = append(result, agent)
-				break
-			}
+		if slices.Contains(agent.Spec.Skills, skill) {
+			result = append(result, agent)
 		}
 	}
 	return result
